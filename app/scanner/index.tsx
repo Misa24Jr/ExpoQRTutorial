@@ -2,18 +2,25 @@ import { Camera, CameraView } from "expo-camera";
 import { Stack } from "expo-router";
 import {
   AppState,
-  Linking,
   Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
+  Text,
 } from "react-native";
 import { Overlay } from "./Overlay";
-import { useEffect, useRef } from "react";
+import { SetStateAction, useEffect, useRef, useState } from "react";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 
 export default function Home() {
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
+  const [qrData, setQrData] = useState(""); // Estado para guardar el contenido del QR
+  const translateY = useSharedValue(100); // Valor inicial para ocultar el mensaje
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -31,6 +38,45 @@ export default function Home() {
     };
   }, []);
 
+  const handleBarcodeScanned = async (data: SetStateAction<string>) => {
+    if (data && !qrLock.current) {
+      qrLock.current = true;
+      setQrData(data); // Guarda el contenido del QR
+      translateY.value = withTiming(0, { duration: 500 }); // Sube el mensaje con animación
+
+      // Realiza el fetch al backend
+      try {
+        const response = await fetch("http://192.168.1.95:3000/post", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ usuario_id: data }),
+        });
+
+        if (response.ok) {
+          console.log("Registro creado exitosamente");
+        } else {
+          console.error("Error al registrar el QR:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error en la solicitud:", error);
+      }
+
+      setTimeout(() => {
+        translateY.value = withTiming(100, { duration: 500 }); // Baja el mensaje con animación
+        setTimeout(() => {
+          setQrData(""); // Limpia el mensaje después de la animación
+          qrLock.current = false; // Desbloquea para nuevos escaneos
+        }, 500);
+      }, 3000);
+    }
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
     <SafeAreaView style={StyleSheet.absoluteFillObject}>
       <Stack.Screen
@@ -42,17 +88,35 @@ export default function Home() {
       {Platform.OS === "android" ? <StatusBar hidden /> : null}
       <CameraView
         style={StyleSheet.absoluteFillObject}
-        facing="back"
-        onBarcodeScanned={({ data }) => {
-          if (data && !qrLock.current) {
-            qrLock.current = true;
-            setTimeout(async () => {
-              await Linking.openURL(data);
-            }, 500);
-          }
-        }}
+        facing="front"
+        onBarcodeScanned={({ data }) => handleBarcodeScanned(data)}
       />
       <Overlay />
+      <Animated.View style={[styles.qrContainer, animatedStyle]}>
+        <Text style={styles.qrText}>
+          {qrData ? `Alumno: ${qrData}` : ""}
+        </Text>
+      </Animated.View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  qrContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 20,
+    transform: [{ translateY: 100 }], // Inicialmente oculto
+  },
+  qrText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+  },
+});
