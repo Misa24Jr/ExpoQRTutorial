@@ -8,20 +8,35 @@ import {
   TextInput,
   Modal,
   Animated,
+  Image,
+  ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCameraPermissions } from "expo-camera";
 import { Link, Stack } from "expo-router";
-import { sub } from "@shopify/react-native-skia";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import Message from "../components/MessageBar";
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [dbName, setDbName] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
-  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false); // Modal para clave
-  const [deleteKey, setDeleteKey] = useState(""); // Clave para eliminar
-  const [errorMessage, setErrorMessage] = useState(""); // Mensaje de error
-  const [fadeAnim] = useState(new Animated.Value(0)); // Animación de desvanecimiento
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteKey, setDeleteKey] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fadeAnim] = useState(new Animated.Value(0));
+
+  const [message, setMessage] = useState({
+    text: "",
+    type: "info",
+    visible: false,
+  });
+
+  const showMessage = (text: string, type: "success" | "error" | "info") => {
+    setMessage({ text, type, visible: true });
+  };
 
   const isPermissionGranted = Boolean(permission?.granted);
 
@@ -33,90 +48,99 @@ export default function Home() {
       }
     };
     checkDbName();
-  }, []);
+  }, [dbName]); // Escuchar cambios en dbName
+  
 
   const handleSaveDbName = async () => {
     if (dbName) {
+      setIsLoading(true);
       try {
         await AsyncStorage.setItem("dbName", dbName);
-
-        // Enviar el nombre al backend
-        await fetch("http://192.168.1.95:3000/set-db", {
+        await fetch("http://192.168.1.95:3000/configurar-base-datos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ dbName }),
         });
-
         setModalVisible(false);
+        showMessage("Nombre guardado con exito", "success");
       } catch (error) {
         console.error("Error saving dbName:", error);
+        showMessage("Error al guardar el nombre", "error");
+      } finally {
+        setIsLoading(false);
       }
+    } else {
+      showMessage("Por favor, ingresa un nombre", "error");
     }
   };
 
-  const handleDeleteDbName = async () => {
-    setDeleteModalVisible(true); 
+  const handleConsole = () => {
+    console.log("Hola mundo");
   };
+
+  const handleDeleteDbName = () => setDeleteModalVisible(true);
 
   const handleDeleteConfirm = async () => {
     if (deleteKey === "0000") {
+      setIsLoading(true);
       try {
-        // Eliminar el nombre de la base de datos de AsyncStorage
-        await AsyncStorage.removeItem("dbName");
-
-        // También puedes enviar al backend si necesitas restablecer la conexión
-        await fetch("http://192.168.1.95:3000/set-db", {
+        await AsyncStorage.removeItem("dbName"); // Elimina el nombre
+        await fetch("http://192.168.1.95:3000/limpiar-base-datos", {
           method: "POST",
         });
-
-        setDbName(""); // Limpiar el estado del nombre de la base de datos
-        alert("Nombre de la base de datos eliminado y conexión restablecida.");
-        setDeleteModalVisible(false); // Cerrar el modal
+  
+        setDbName(""); // Limpia el estado local
+        setDeleteModalVisible(false); // Cierra el modal de eliminación
+        setModalVisible(true); // Abre el modal para ingresar el nombre
+        showMessage("Nombre eliminado con exito", "success");
       } catch (error) {
         console.error("Error deleting dbName:", error);
-        alert("Error al eliminar el nombre de la base de datos.");
+        showMessage("Error al eliminar el nombre", "error");
+      } finally {
+        setIsLoading(false);
       }
     } else {
-      setErrorMessage(
-        "La clave es incorrecta. No se puede eliminar el nombre de la base de datos."
-      );
-      // Iniciar animación de desvanecimiento del mensaje de error
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-
-      // Ocultar el mensaje de error después de 3 segundos
-      setTimeout(() => {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-        setErrorMessage(""); // Limpiar el mensaje después de la animación
-      }, 3000);
+      showMessage("Clave incorrecta", "error");
     }
   };
+  
+  
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ title: "Overview", headerShown: false }} />
-
       <View style={styles.titleContainer}>
-        <Text style={styles.title}>INSIEMPCA</Text>
-        <Text style={styles.subtitle}>Lector QR</Text>
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <Image
+            source={require("../assets/images/icon.png")}
+            style={{ width: 80, height: 80 }}
+          />
+          <Text style={styles.title}>INSIEMPCA</Text>
+        </View>
+        <Text style={styles.subtitle}>Bienvenido a QRLector</Text>
+        <Pressable onPress={requestPermission} style={{ paddingTop: 10 }}>
+          <Text style={{ color: "gray", fontSize: 16 }}>Requerir Permisos</Text>
+        </Pressable>
       </View>
 
       <View style={styles.btnContainer}>
-        <Pressable onPress={requestPermission} style={styles.deleteButton}>
-          <Text style={styles.buttonStyle}>Requerir Permisos</Text>
-        </Pressable>
         <Link href={"/scanner"} asChild>
-          <Pressable disabled={!isPermissionGranted} style={styles.deleteButton} >
+          <Pressable
+            disabled={!isPermissionGranted}
+            style={styles.scannerButton}
+
+          >
             <Text
               style={[
-                styles.buttonStyle,
+                styles.buttonText,
                 { opacity: !isPermissionGranted ? 0.5 : 1 },
               ]}
             >
@@ -124,23 +148,21 @@ export default function Home() {
             </Text>
           </Pressable>
         </Link>
-
         <Pressable style={styles.deleteButton} onPress={handleDeleteDbName}>
-          <Text style={styles.buttonText}>Eliminar Base de Datos</Text>
+          <Text style={styles.deleteButtonText}>Eliminar dispositivo</Text>
         </Pressable>
       </View>
 
-
       {/* Modal para ingresar el nombre de la base de datos */}
-      <Modal visible={isModalVisible} transparent={true} animationType="fade">
+      <Modal visible={isModalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              Ingresa el nombre de la base de datos
+              Ingresa el nombre del dispositivo
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Nombre de la base de datos"
+              placeholder="Nombre"
               placeholderTextColor="#aaa"
               value={dbName}
               onChangeText={setDbName}
@@ -152,12 +174,8 @@ export default function Home() {
         </View>
       </Modal>
 
-      {/* Modal para ingresar la clave de eliminación */}
-      <Modal
-        visible={isDeleteModalVisible}
-        transparent={true}
-        animationType="fade"
-      >
+      {/* Modal para eliminar la base de datos */}
+      <Modal visible={isDeleteModalVisible} transparent animationType="fade">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
@@ -165,18 +183,17 @@ export default function Home() {
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Codigo de eliminación"
+              placeholder="Codigo"
               placeholderTextColor="#aaa"
               value={deleteKey}
               onChangeText={setDeleteKey}
               secureTextEntry
             />
-            {/* Animación de desvanecimiento para el mensaje de error */}
-            {errorMessage ? (
+            {errorMessage && (
               <Animated.View style={{ opacity: fadeAnim }}>
                 <Text style={styles.errorMessage}>{errorMessage}</Text>
               </Animated.View>
-            ) : null}
+            )}
             <Pressable style={styles.saveButton} onPress={handleDeleteConfirm}>
               <Text style={styles.buttonText}>Eliminar</Text>
             </Pressable>
@@ -189,6 +206,21 @@ export default function Home() {
           </View>
         </View>
       </Modal>
+
+      {/* Indicador de carga */}
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+        </View>
+      )}
+      <Icon name="qr-code" size={100} color="#FFFFFF" />
+
+      <Message
+        message={message.text}
+        type={message.type as "success" | "error" | "info"}
+        visible={message.visible}
+        onHide={() => setMessage({ ...message, visible: false })}
+      />
     </SafeAreaView>
   );
 }
@@ -197,29 +229,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#c8d9e6",
+    backgroundColor: "#2f4156",
     justifyContent: "space-around",
-    paddingVertical: 80,
+    paddingVertical: 60,
   },
-  title: { color: "#2f4156", fontSize: 40 },
-  subtitle: { color: "#2f4156", fontSize: 20 },
-  buttonStyle: {
-    color: "#567c8d",
-    fontSize: 25,
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  titleContainer:{
-    width: "100%",
-    height: "50%",
+  title: { color: "#FFFFFF", fontSize: 55 },
+  subtitle: { color: "#FFFFFF", fontSize: 25, fontWeight: "bold" },
+
+  titleContainer: {
+    width: "70%",
+    height: "40%",
     display: "flex",
+    flexDirection: "column",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
     // backgroundColor: "blue"
   },
-  btnContainer:{
+  btnContainer: {
     width: "100%",
-    height: "50%",
+    height: "60%",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -235,24 +263,64 @@ const styles = StyleSheet.create({
   modalContent: {
     width: 300,
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#f5efeb",
     borderRadius: 10,
   },
-  modalTitle: { fontSize: 18, marginBottom: 10, textAlign: "center" },
+  modalTitle: {
+    fontSize: 22,
+    marginBottom: 10,
+    textAlign: "center",
+    color: "#2f4156",
+  },
+
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#2f4156",
     padding: 10,
     marginVertical: 10,
     borderRadius: 5,
   },
-  saveButton: { backgroundColor: "#0E7AFE", padding: 10, borderRadius: 5 },
-  buttonText: { color: "white", textAlign: "center", fontSize: 16 },
+  saveButton: {
+    backgroundColor: "#f5efeb",
+    borderColor: "#2f4156",
+    borderWidth: 1,
+    padding: 10,
+    marginTop: 5,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: "#2f4156",
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "ultralight",
+  },
+  deleteButtonText: {
+    color: "#f5efeb",
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "ultralight",
+  },
   deleteButton: {
-    backgroundColor: "#FF6347",
+    width: 250,
+    backgroundColor: "#2f4156",
+    borderColor: "#f5efeb",
+    borderWidth: 1,
     padding: 10,
     marginTop: 20,
-    borderRadius: 5,
+    borderRadius: 10,
+  },
+  scannerButton: {
+    width: 250,
+    backgroundColor: "#f5efeb",
+    padding: 10,
+    marginTop: 20,
+    borderRadius: 10,
   },
   errorMessage: { color: "red", textAlign: "center", marginTop: 10 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
 });

@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: "#2f4156",
     padding: 10,
     borderRadius: 8,
     marginHorizontal: 20,
-    transform: [{ translateY: 100 }], // Inicialmente oculto
+    transform: [{ translateY: 100 }],
   },
   qrText: {
-    color: "#fff",
+    color: "#f5efeb",
     fontSize: 16,
     textAlign: "center",
   },
