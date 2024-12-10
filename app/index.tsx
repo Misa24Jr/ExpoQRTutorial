@@ -5,7 +5,6 @@ import {
   StyleSheet,
   SafeAreaView,
   Pressable,
-  Animated,
   Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,11 +12,11 @@ import { useCameraPermissions } from "expo-camera";
 import { Stack } from "expo-router";
 import Icon from "react-native-vector-icons/MaterialIcons";
 // Componentes personalizados
-import CustomButton from "@/components/CustomButton";
-import Message from "../components/MessageBar";
-import ModalName from "@/components/ModalName";
-import DeleteModal from "@/components/DeleteModal";
-import Loading from "@/components/loading";
+import CustomButton from "@/components/buttons/CustomButton";
+import Message from "../components/others/MessageBar";
+import ModalName from "@/components/modals/ModalName";
+import DeleteModal from "@/components/modals/DeleteModal";
+import Loading from "@/components/others/loading";
 
 export default function Home() {
   const URL = "http://192.168.1.95:3000";

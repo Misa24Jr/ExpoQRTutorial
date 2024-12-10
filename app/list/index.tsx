@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Text, View, FlatList, StyleSheet } from "react-native";
-import { Link, Stack } from "expo-router";
+import { Stack } from "expo-router";
+import Card from "@/components/others/Card"; // Asegúrate de que la ruta sea correcta
 
 interface Asistencia {
   id: number;
@@ -9,21 +10,22 @@ interface Asistencia {
 }
 
 export default function Home() {
-  const URL = "http://192.168.1.95:3000"
-  const [data, setData] = useState<Asistencia[]>([]); // Define el estado con el tipo `Asistencia`
-  const [loading, setLoading] = useState<boolean>(true); // Estado para la carga
+  const URL = "http://192.168.1.95:3000";
+  const [data, setData] = useState<Asistencia[]>([]); // Estado para los registros de asistencia
+  const [loading, setLoading] = useState<boolean>(true); // Estado de carga
+  const [dbName, setDbName] = useState("");
 
   useEffect(() => {
     // Función para obtener los registros desde el endpoint
     const fetchUsuarios = async () => {
       try {
-        const response = await fetch(`${URL}/get`); // Cambia la URL por tu endpoint
-        const result: Asistencia[] = await response.json(); // Asegúrate de que el resultado sea un arreglo de tipo `Asistencia`
+        const response = await fetch(`${URL}/get`);
+        const result: Asistencia[] = await response.json();
         setData(result);
       } catch (error) {
         console.error("Error al obtener los registros:", error);
       } finally {
-        setLoading(false); // Finaliza la carga
+        setLoading(false);
       }
     };
 
@@ -39,23 +41,27 @@ export default function Home() {
   }
 
   return (
-    <><Stack.Screen options={{ title: "Listado", headerShown: true }} /><View style={styles.container}>
-      <Text style={styles.title}>Registros de Asistencia</Text>
-      {data.length === 0 ? (
-        <Text>No hay registros disponibles.</Text>
-      ) : (
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.text}>ID: {item.id}</Text>
-              <Text style={styles.text}>Fecha: {item.fe_fecha}</Text>
-              <Text style={styles.text}>Usuario ID: {item.usuario_id ?? "No asignado"}</Text>
-            </View>
-          )} />
-      )}
-    </View></>
+    <>
+      <Stack.Screen options={{ title: "Listado", headerShown: true }} />
+      <View style={styles.container}>
+        <Text style={styles.title}>Registros de Asistencia</Text>
+        {data.length === 0 ? (
+          <Text>No hay registros disponibles.</Text>
+        ) : (
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <Card
+                id={item.id}
+                fe_fecha={item.fe_fecha}
+                usuario_id={item.usuario_id}
+              />
+            )}
+          />
+        )}
+      </View>
+    </>
   );
 }
 
@@ -70,19 +76,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  text: {
-    fontSize: 16,
   },
 });
