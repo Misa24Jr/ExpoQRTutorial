@@ -17,6 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 export default function Home() {
+  const URL = "http://192.168.1.95:3000";
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const [qrData, setQrData] = useState(""); // Estado para guardar el contenido del QR
@@ -42,11 +43,11 @@ export default function Home() {
     if (data && !qrLock.current) {
       qrLock.current = true;
       setQrData(data); // Guarda el contenido del QR
-      translateY.value = withTiming(0, { duration: 500 }); // Sube el mensaje con animación
+      translateY.value = withTiming(0, { duration: 500 }); // Sube el mensaje con animaciï¿½n
 
       // Realiza el fetch al backend
       try {
-        const response = await fetch("http://192.168.1.95:3000/post", {
+        const response = await fetch(`${URL}/post`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -64,9 +65,9 @@ export default function Home() {
       }
 
       setTimeout(() => {
-        translateY.value = withTiming(100, { duration: 500 }); // Baja el mensaje con animación
+        translateY.value = withTiming(100, { duration: 500 }); // Baja el mensaje con animaciï¿½n
         setTimeout(() => {
-          setQrData(""); // Limpia el mensaje después de la animación
+          setQrData(""); // Limpia el mensaje despuï¿½s de la animaciï¿½n
           qrLock.current = false; // Desbloquea para nuevos escaneos
         }, 500);
       }, 3000);

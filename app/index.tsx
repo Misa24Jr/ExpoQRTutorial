@@ -5,28 +5,28 @@ import {
   StyleSheet,
   SafeAreaView,
   Pressable,
-  TextInput,
-  Modal,
   Animated,
   Image,
-  ActivityIndicator,
-  TouchableOpacity,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCameraPermissions } from "expo-camera";
-import { Link, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import Icon from "react-native-vector-icons/MaterialIcons";
+// Componentes personalizados
+import CustomButton from "@/components/CustomButton";
 import Message from "../components/MessageBar";
+import ModalName from "@/components/ModalName";
+import DeleteModal from "@/components/DeleteModal";
+import Loading from "@/components/loading";
 
 export default function Home() {
+  const URL = "http://192.168.1.95:3000";
   const [isLoading, setIsLoading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [dbName, setDbName] = useState("");
   const [isModalVisible, setModalVisible] = useState(false);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteKey, setDeleteKey] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [fadeAnim] = useState(new Animated.Value(0));
 
   const [message, setMessage] = useState({
     text: "",
@@ -49,14 +49,13 @@ export default function Home() {
     };
     checkDbName();
   }, [dbName]); // Escuchar cambios en dbName
-  
 
   const handleSaveDbName = async () => {
     if (dbName) {
       setIsLoading(true);
       try {
         await AsyncStorage.setItem("dbName", dbName);
-        await fetch("http://192.168.1.95:3000/configurar-base-datos", {
+        await fetch(`${URL}/configurar-base-datos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ dbName }),
@@ -73,25 +72,20 @@ export default function Home() {
       showMessage("Por favor, ingresa un nombre", "error");
     }
   };
-
-  const handleConsole = () => {
-    console.log("Hola mundo");
-  };
-
   const handleDeleteDbName = () => setDeleteModalVisible(true);
 
-  const handleDeleteConfirm = async () => {
-    if (deleteKey === "0000") {
+  const handleDeleteConfirm = async (deleteKey: string) => {
+    if (deleteKey === "1234") {
       setIsLoading(true);
       try {
-        await AsyncStorage.removeItem("dbName"); // Elimina el nombre
-        await fetch("http://192.168.1.95:3000/limpiar-base-datos", {
+        await AsyncStorage.removeItem("dbName");
+        await fetch(`${URL}/limpiar-base-datos`, {
           method: "POST",
         });
   
-        setDbName(""); // Limpia el estado local
-        setDeleteModalVisible(false); // Cierra el modal de eliminación
-        setModalVisible(true); // Abre el modal para ingresar el nombre
+        setDbName("");
+        setDeleteModalVisible(false);
+        setModalVisible(true);
         showMessage("Nombre eliminado con exito", "success");
       } catch (error) {
         console.error("Error deleting dbName:", error);
@@ -101,10 +95,14 @@ export default function Home() {
       }
     } else {
       showMessage("Clave incorrecta", "error");
+      console.log("Enviado al backend: ", deleteKey);
     }
   };
   
-  
+
+  const handleCancel = () => {
+    setDeleteModalVisible(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,87 +130,36 @@ export default function Home() {
       </View>
 
       <View style={styles.btnContainer}>
-        <Link href={"/scanner"} asChild>
-          <Pressable
-            disabled={!isPermissionGranted}
-            style={styles.scannerButton}
-
-          >
-            <Text
-              style={[
-                styles.buttonText,
-                { opacity: !isPermissionGranted ? 0.5 : 1 },
-              ]}
-            >
-              Escanear
-            </Text>
-          </Pressable>
-        </Link>
+        <CustomButton
+          href="/scanner"
+          text="Escanear"
+          isDisabled={!isPermissionGranted}
+        />
+        <CustomButton
+          href="/list"
+          text="Listado"
+          isDisabled={!isPermissionGranted}
+        />
         <Pressable style={styles.deleteButton} onPress={handleDeleteDbName}>
           <Text style={styles.deleteButtonText}>Eliminar dispositivo</Text>
         </Pressable>
       </View>
 
-      {/* Modal para ingresar el nombre de la base de datos */}
-      <Modal visible={isModalVisible} transparent animationType="fade">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Ingresa el nombre del dispositivo
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre"
-              placeholderTextColor="#aaa"
-              value={dbName}
-              onChangeText={setDbName}
-            />
-            <Pressable style={styles.saveButton} onPress={handleSaveDbName}>
-              <Text style={styles.buttonText}>Guardar</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal para eliminar la base de datos */}
-      <Modal visible={isDeleteModalVisible} transparent animationType="fade">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Ingresa la clave para eliminar
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Codigo"
-              placeholderTextColor="#aaa"
-              value={deleteKey}
-              onChangeText={setDeleteKey}
-              secureTextEntry
-            />
-            {errorMessage && (
-              <Animated.View style={{ opacity: fadeAnim }}>
-                <Text style={styles.errorMessage}>{errorMessage}</Text>
-              </Animated.View>
-            )}
-            <Pressable style={styles.saveButton} onPress={handleDeleteConfirm}>
-              <Text style={styles.buttonText}>Eliminar</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.saveButton, { backgroundColor: "#ccc" }]}
-              onPress={() => setDeleteModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Indicador de carga */}
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#ffffff" />
-        </View>
-      )}
+      <ModalName
+        isVisible={isModalVisible}
+        title="Ingresa el nombre del dispositivo"
+        placeholder="Nombre"
+        value={dbName}
+        onChangeText={setDbName}
+        onSave={handleSaveDbName}
+      />
+      <DeleteModal
+        isVisible={isDeleteModalVisible}
+        onDeleteConfirm={handleDeleteConfirm}
+        onCancel={handleCancel}
+        errorMessage={errorMessage}
+      />
+      <Loading isVisible={isLoading} />
       <Icon name="qr-code" size={100} color="#FFFFFF" />
 
       <Message
@@ -243,7 +190,6 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "flex-start",
-    // backgroundColor: "blue"
   },
   btnContainer: {
     width: "100%",
@@ -251,34 +197,6 @@ const styles = StyleSheet.create({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: "red"
-  },
-  // Estilos para los modales
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    width: 300,
-    padding: 20,
-    backgroundColor: "#f5efeb",
-    borderRadius: 10,
-  },
-  modalTitle: {
-    fontSize: 22,
-    marginBottom: 10,
-    textAlign: "center",
-    color: "#2f4156",
-  },
-
-  input: {
-    borderWidth: 1,
-    borderColor: "#2f4156",
-    padding: 10,
-    marginVertical: 10,
-    borderRadius: 5,
   },
   saveButton: {
     backgroundColor: "#f5efeb",
@@ -287,12 +205,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 5,
     borderRadius: 10,
-  },
-  buttonText: {
-    color: "#2f4156",
-    textAlign: "center",
-    fontSize: 20,
-    fontWeight: "ultralight",
   },
   deleteButtonText: {
     color: "#f5efeb",
@@ -308,19 +220,5 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 20,
     borderRadius: 10,
-  },
-  scannerButton: {
-    width: 250,
-    backgroundColor: "#f5efeb",
-    padding: 10,
-    marginTop: 20,
-    borderRadius: 10,
-  },
-  errorMessage: { color: "red", textAlign: "center", marginTop: 10 },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
 });
