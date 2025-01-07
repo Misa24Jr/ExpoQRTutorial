@@ -17,7 +17,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 export default function Home() {
-  const URL = "http://192.168.1.95:3000";
+  const URL = "http://insiemp.com:3000";
+  // const URL = "http://192.168.1.95:3000";
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const [qrData, setQrData] = useState(""); // Estado para guardar el contenido del QR
@@ -43,7 +44,7 @@ export default function Home() {
     if (data && !qrLock.current) {
       qrLock.current = true;
       setQrData(data); // Guarda el contenido del QR
-      translateY.value = withTiming(0, { duration: 500 }); // Sube el mensaje con animaci�n
+      translateY.value = withTiming(0, { duration: 500 }); // Sube el mensaje con animacion
 
       // Realiza el fetch al backend
       try {
@@ -52,7 +53,7 @@ export default function Home() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ usuario_id: data }),
+          body: JSON.stringify({ id_persona: data }),
         });
 
         if (response.ok) {

@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   Pressable,
   Image,
+  Touchable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCameraPermissions } from "expo-camera";
@@ -17,9 +18,12 @@ import Message from "../components/others/MessageBar";
 import ModalName from "@/components/modals/ModalName";
 import DeleteModal from "@/components/modals/DeleteModal";
 import Loading from "@/components/others/loading";
+import { TouchableOpacity } from "react-native-gesture-handler";
 
 export default function Home() {
-  const URL = "http://192.168.1.95:3000";
+  // const URL = "http://insiemp.com:3000";
+  // const URL = "http://192.168.1.95:3000";
+  const URL = "http://192.168.20.129:3000";
   const [isLoading, setIsLoading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [dbName, setDbName] = useState("");
@@ -57,10 +61,10 @@ export default function Home() {
         await fetch(`${URL}/configurar-base-datos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dbName }),
+          body: JSON.stringify({ dbName }), // Envía "amarillo", "rojo", etc.
         });
         setModalVisible(false);
-        showMessage("Nombre guardado con exito", "success");
+        showMessage("Nombre guardado con éxito", "success");
       } catch (error) {
         console.error("Error saving dbName:", error);
         showMessage("Error al guardar el nombre", "error");
@@ -71,6 +75,7 @@ export default function Home() {
       showMessage("Por favor, ingresa un nombre", "error");
     }
   };
+
   const handleDeleteDbName = () => setDeleteModalVisible(true);
 
   const handleDeleteConfirm = async (deleteKey: string) => {
@@ -81,7 +86,7 @@ export default function Home() {
         await fetch(`${URL}/limpiar-base-datos`, {
           method: "POST",
         });
-  
+
         setDbName("");
         setDeleteModalVisible(false);
         setModalVisible(true);
@@ -97,7 +102,6 @@ export default function Home() {
       console.log("Enviado al backend: ", deleteKey);
     }
   };
-  
 
   const handleCancel = () => {
     setDeleteModalVisible(false);
@@ -116,10 +120,11 @@ export default function Home() {
             gap: 10,
           }}
         >
-          <Image
-            source={require("../assets/images/icon.png")}
-            style={{ width: 80, height: 80 }}
-          />
+            <Image
+              source={require("../assets/images/icon.png")}
+              style={{ width: 80, height: 80 }}
+            />
+
           <Text style={styles.title}>INSIEMPCA</Text>
         </View>
         <Text style={styles.subtitle}>Bienvenido a QRLector</Text>

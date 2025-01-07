@@ -4,13 +4,15 @@ import { Stack } from "expo-router";
 import Card from "@/components/others/Card"; // Asegúrate de que la ruta sea correcta
 
 interface Asistencia {
-  id: number;
-  fe_fecha: string;
-  usuario_id: number | null;
+  id_asistencia: number;
+  // id: number;
+  fe_asistencia: string;
+  id_persona: number | null;
 }
 
 export default function Home() {
-  const URL = "http://192.168.1.95:3000";
+  // const URL = "http://insiemp.com:3000";
+  const URL = "http://192.168.20.129:3000";
   const [data, setData] = useState<Asistencia[]>([]); // Estado para los registros de asistencia
   const [loading, setLoading] = useState<boolean>(true); // Estado de carga
   const [dbName, setDbName] = useState("");
@@ -50,12 +52,12 @@ export default function Home() {
         ) : (
           <FlatList
             data={data}
-            keyExtractor={(item) => item.id.toString()}
+            // keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <Card
-                id={item.id}
-                fe_fecha={item.fe_fecha}
-                usuario_id={item.usuario_id}
+                id={item.id_asistencia}
+                fe_fecha={item.fe_asistencia}
+                usuario_id={item.id_persona}
               />
             )}
           />
