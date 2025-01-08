@@ -21,9 +21,8 @@ import Loading from "@/components/others/loading";
 import { TouchableOpacity } from "react-native-gesture-handler";
 
 export default function Home() {
-  // const URL = "http://insiemp.com:3000";
-  // const URL = "http://192.168.1.95:3000";
-  const URL = "http://192.168.20.129:3000";
+  const URL = "http://insiemp.com:3000";
+  // const URL = "http://192.168.20.129:3000";
   const [isLoading, setIsLoading] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [dbName, setDbName] = useState("");

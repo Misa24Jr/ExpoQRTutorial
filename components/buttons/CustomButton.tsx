@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, Pressable, StyleSheet } from "react-native";
-import { Link } from "expo-router"; // Asegúrate de usar el paquete adecuado para tu navegación
+import { Href, Link } from "expo-router"; // Asegúrate de usar el paquete adecuado para tu navegación
 
 interface ButtonProps {
   href: string; // Ruta del enlace
@@ -10,7 +10,7 @@ interface ButtonProps {
 
 const CustomButton: React.FC<ButtonProps> = ({ href, text, isDisabled = false }) => {
   return (
-    <Link href={href} asChild>
+    <Link href={href as Href<string | object>} asChild>
       <Pressable
         disabled={isDisabled}
         style={styles.scannerButton}
