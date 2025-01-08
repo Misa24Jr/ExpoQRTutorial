@@ -17,8 +17,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 export default function Home() {
-  const URL = "http://insiemp.com:3000";
-  // const URL = "http://192.168.20.129:3000";
+  // const URL = "http://insiemp.com:3000";
+  const URL = "http://192.168.20.184:3000";
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
   const [qrData, setQrData] = useState(""); // Estado para guardar el contenido del QR

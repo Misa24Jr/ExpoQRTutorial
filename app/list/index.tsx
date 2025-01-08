@@ -11,8 +11,8 @@ interface Asistencia {
 }
 
 export default function Home() {
-  const URL = "http://insiemp.com:3000";
-  // const URL = "http://192.168.20.129:3000";
+  // const URL = "http://insiemp.com:3000";
+  const URL = "http://192.168.20.184:3000";
   const [data, setData] = useState<Asistencia[]>([]); // Estado para los registros de asistencia
   const [loading, setLoading] = useState<boolean>(true); // Estado de carga
   const [dbName, setDbName] = useState("");
